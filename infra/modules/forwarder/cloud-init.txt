@@ -1,0 +1,35 @@
+#cloud-config
+package_upgrade: true
+packages:
+- iptables-persistent
+write_files:
+- path: /etc/sysctl.conf
+  content: | 
+    # added by cloud init
+    net.ipv4.ip_forward=1
+    net.ipv4.conf.all.route_localnet=1
+  append: true
+- path: /tmp/config-iptables.sh
+  content: | 
+    #!/bin/bash
+    export INBOUNDNET=10.0.1.0/24
+    export ONPREMSERVER=192.168.42.65
+    export ONPREMNET=192.168.42.64/29
+    export PORT=8000
+    echo HOSTNAME $HOSTNAME INBOUNDNET $INBOUNDNET ONPREMSERVER $ONPREMSERVER ONPREMNET $ONPREMNET
+    iptables --flush
+    iptables -P INPUT DROP
+    iptables -P OUTPUT ACCEPT
+    iptables -A INPUT -i lo -j ACCEPT
+    iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
+    iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+    iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1 --dport $PORT -j DNAT --to-destination $ONPREMSERVER
+    iptables -t nat -A PREROUTING -s 168.63.129.16/32 -p tcp -m tcp --dport $PORT -j DNAT --to-destination $ONPREMSERVER:$PORT
+    iptables -t nat -A PREROUTING -s $INBOUNDNET -p tcp -m tcp --dport $PORT -j DNAT --to-destination $ONPREMSERVER:$PORT
+    iptables -t nat -A POSTROUTING -d $ONPREMNET -j MASQUERADE
+  permissions: '0755'
+runcmd:
+- sysctl -p
+- /tmp/config-iptables.sh
+- service netfilter-persistent save

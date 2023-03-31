@@ -1,0 +1,26 @@
+#cloud-config
+package_upgrade: true
+packages:
+   - apt-transport-https
+   - dnsutils
+   - inetutils-traceroute
+write_files:
+   - path: /etc/systemd/system/simplehttp.service
+     owner: root:root
+     permissions: '0755'
+     content: |
+         [Unit]
+         Description=Job that runs the python SimpleHTTPServer daemon
+         Documentation=man:SimpleHTTPServer(1)
+
+         [Service]
+         Type=simple
+         ExecStart=/usr/bin/python3 -m http.server 8000
+         ExecStop=/bin/kill `/bin/ps aux | /bin/grep http.server | /bin/grep -v grep | /usr/bin/awk '{ print $2 }'`
+
+         [Install]
+         WantedBy=multi-user.target
+runcmd:
+   - [ systemctl, daemon-reload ]
+   - [ systemctl, enable, simplehttp.service ]
+   - [ systemctl, start, --no-block, simplehttp.service ]
