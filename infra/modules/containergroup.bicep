@@ -2,7 +2,7 @@ param name string
 param location string = resourceGroup().location
 param tags object
 param subnetId string
-param image string = 'bash'
+param image string = 'hacklab/docker-nettools'
 
 resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2022-09-01' = {
   name: name

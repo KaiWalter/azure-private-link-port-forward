@@ -1,13 +1,12 @@
 param location string = resourceGroup().location
-param vnetComputeId string
+param vnetSpokeId string
 param loadBalancerFrontendIpConfigurationId string
-param subnetBackendId string
-param subnetComputeName string = 'jump'
-var subnetComputeId = '${vnetComputeId}/subnets/${subnetComputeName}'
+param sharedSubnetId string
+param linkedSubnetId string
 
-// link load balancer with private link service within backend subnet
+// link load balancer with private link service within shared subnet
 resource pl 'Microsoft.Network/privateLinkServices@2021-05-01' = {
-  name: 'pl-compute-smtp-forwarder'
+  name: 'pl-linked-forwarder'
   location: location
   properties: {
     enableProxyProtocol: false
@@ -23,7 +22,7 @@ resource pl 'Microsoft.Network/privateLinkServices@2021-05-01' = {
           privateIPAllocationMethod: 'Dynamic'
           privateIPAddressVersion: 'IPv4'
           subnet: {
-            id: subnetBackendId
+            id: sharedSubnetId
           }
           primary: false
         }
@@ -33,25 +32,25 @@ resource pl 'Microsoft.Network/privateLinkServices@2021-05-01' = {
 }
 
 resource pep 'Microsoft.Network/privateEndpoints@2021-05-01' = {
-  name: 'pe-compute-smtp-forwarder'
+  name: 'pe-linked-forwarder'
   location: location
   properties: {
     subnet: {
-      id: subnetComputeId
+      id: linkedSubnetId
     }
     privateLinkServiceConnections: [
       {
         properties: {
           privateLinkServiceId: pl.id
         }
-        name: 'pl-compute-smtp-forwarder'
+        name: 'pl-linked-forwarder'
       }
     ]
   }
 }
 
 resource dns 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'internal-smtp.net'
+  name: 'internal.net'
   location: 'global'
 }
 
@@ -62,7 +61,7 @@ resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLin
   properties: {
     registrationEnabled: false
     virtualNetwork: {
-      id: vnetComputeId
+      id: vnetSpokeId
     }
   }
 }
@@ -75,7 +74,7 @@ module nic2pip 'forwarder-private-nic-to-ip.bicep' = {
 }
 
 resource privateDnsZoneEntry 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
-  name: 'relay'
+  name: 'onprem-server'
   parent: dns
   properties: {
     aRecords: [

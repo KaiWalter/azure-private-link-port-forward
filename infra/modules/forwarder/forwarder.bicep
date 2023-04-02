@@ -21,9 +21,9 @@ param availabilityZones array = [
   '3'
 ]
 
+param vnetSpokeId string
 param sharedSubnetId string
-
-param resourceGroupNameCompute string
+param linkedSubnetId string
 
 var vmssName = 'vmss-fwd-${resourceToken}'
 var computerNamePrefix = 'vm-fwd-${resourceToken}-'
@@ -218,43 +218,13 @@ resource vmss 'Microsoft.Compute/virtualMachineScaleSets@2020-12-01' = {
   zones: availabilityZones
 }
 
-// resource dns 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-//   name: 'internal-smtp.net'
-//   location: 'global'
-// }
-
-// resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-//   parent: dns
-//   name: '${dns.name}-link'
-//   location: 'global'
-//   properties: {
-//     registrationEnabled: false
-//     virtualNetwork: {
-//       id: vnetId
-//     }
-//   }
-// }
-
-// resource privateDnsZoneEntry 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
-//   name: 'relay'
-//   parent: dns
-//   properties: {
-//     aRecords: [
-//       {
-//         ipv4Address: ilb.properties.frontendIPConfigurations[0].properties.privateIPAddress
-//       }
-//     ]
-//     ttl: 3600
-//   }
-// }
-
-// module plComputeForwarder 'forwarder-compute-privatelink.bicep' = {
-//   name: 'plComputeForwarder'
-//   scope: resourceGroup(resourceGroupNameCompute)
-//   params: {
-//     location: location
-//     subnetBackendId: subnetBackendId
-//     vnetComputeId: vnetComputeId
-//     loadBalancerFrontendIpConfigurationId: ilb.properties.frontendIPConfigurations[0].id
-//   }
-// }
+module plComputeForwarder 'forwarder-spoke-privatelink.bicep' = {
+  name: 'plComputeForwarder'
+  params: {
+    location: location
+    vnetSpokeId: vnetSpokeId
+    sharedSubnetId: sharedSubnetId
+    linkedSubnetId: linkedSubnetId
+    loadBalancerFrontendIpConfigurationId: ilb.properties.frontendIPConfigurations[0].id
+  }
+}

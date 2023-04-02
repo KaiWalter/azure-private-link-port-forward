@@ -13,16 +13,9 @@ param logAnalyticsWorkspaceId string
 ])
 param ilbSku string = 'Standard'
 
-@description('Availability zone numbers e.g. 1,2,3.')
-param availabilityZones array = [
-  '1'
-  '2'
-  '3'
-]
-
 var ilbName = 'ilb-${resourceToken}'
 
-resource ilb 'Microsoft.Network/loadBalancers@2022-05-01' = {
+resource ilb 'Microsoft.Network/loadBalancers@2022-09-01' = {
   name: ilbName
   location: location
   tags: tags
@@ -49,6 +42,9 @@ resource ilb 'Microsoft.Network/loadBalancers@2022-05-01' = {
             {
               name: 'server65'
               properties: {
+                subnet: {
+                  id: sharedSubnetId
+                }
                 ipAddress: '192.168.42.65'
                 virtualNetwork: {
                   id: vnetHubId
@@ -58,6 +54,9 @@ resource ilb 'Microsoft.Network/loadBalancers@2022-05-01' = {
             {
               name: 'server66'
               properties: {
+                subnet: {
+                  id: sharedSubnetId
+                }
                 ipAddress: '192.168.42.66'
                 virtualNetwork: {
                   id: vnetHubId
@@ -82,23 +81,23 @@ resource ilb 'Microsoft.Network/loadBalancers@2022-05-01' = {
           protocol: 'Tcp'
           enableTcpReset: false
           loadDistribution: 'Default'
-          disableOutboundSnat: true
+          disableOutboundSnat: false
           backendAddressPool: {
             id: resourceId('Microsoft.Network/loadBalancers/backendAddressPools', ilbName, 'direct')
           }
           probe: {
-            id: resourceId('Microsoft.Network/loadBalancers/probes', ilbName, 'server-port')
+            id: resourceId('Microsoft.Network/loadBalancers/probes', ilbName, 'direct')
           }
         }
       }
     ]
     probes: [
       {
-        name: 'server-port'
+        name: 'direct'
         properties: {
           protocol: 'Tcp'
           port: port
-          intervalInSeconds: 5
+          intervalInSeconds: 15
           numberOfProbes: 2
         }
       }

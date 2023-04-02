@@ -13,7 +13,7 @@ write_files:
   content: | 
     #!/bin/bash
     export INBOUNDNET=10.0.1.0/24
-    export ONPREMSERVER=192.168.42.65
+    if [[ $HOSTNAME =~ [02468]$ ]]; then export ONPREMSERVER=192.168.42.65; else export ONPREMSERVER=192.168.42.66; fi
     export ONPREMNET=192.168.42.64/29
     export PORT=8000
     echo HOSTNAME $HOSTNAME INBOUNDNET $INBOUNDNET ONPREMSERVER $ONPREMSERVER ONPREMNET $ONPREMNET

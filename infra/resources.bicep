@@ -3,7 +3,7 @@ param resourceToken string
 param tags object
 param sshPublicKey string
 param cloudInitOnPrem string
-param deploymentMode string
+param cloudInitForwarder string
 
 module logging 'modules/logging.bicep' = {
   name: 'logging'
@@ -56,30 +56,31 @@ module hubJump 'modules/containergroup.bicep' = {
   }
 }
 
-module forwarder 'modules/forwarder/forwarder.bicep' = if (deploymentMode == 'Forwarder') {
+// module lb 'modules/loadbalancer/loadbalancer.bicep' = {
+//   name: 'lb'
+//   params: {
+//     resourceToken: resourceToken
+//     location: location
+//     tags: tags
+//     sharedSubnetId: network.outputs.vnetHubSharedSubnetId
+//     vnetHubId: network.outputs.vnetHubId
+//     ilbSku: 'Standard'
+//     port: 8000
+//     logAnalyticsWorkspaceId: logging.outputs.logAnalyticsWorkspaceId
+//   }
+// }
+
+module forwarder 'modules/forwarder/forwarder.bicep' = {
   name: 'forwarder'
   params: {
     location: location
     resourceToken: resourceToken
     tags: tags
+    vnetSpokeId: network.outputs.vnetSpokeId
     sharedSubnetId: network.outputs.vnetHubSharedSubnetId
-    resourceGroupNameCompute: ''
+    linkedSubnetId: network.outputs.vnetSpokeLinkedSubnetId
     sshPublicKey: sshPublicKey
-  }
-}
-
-module loadbalancer 'modules/loadbalancer/loadbalancer.bicep' = if (deploymentMode == 'Direct') {
-  name: 'direct-loadbalancer'
-  dependsOn: [
-    vmOnPrem
-  ]
-  params: {
-    resourceToken: resourceToken
-    location: location
-    tags: tags
-    sharedSubnetId: network.outputs.vnetHubSharedSubnetId
-    vnetHubId: network.outputs.vnetHubId
-    logAnalyticsWorkspaceId: logging.outputs.logAnalyticsWorkspaceId
+    cloudInit: cloudInitForwarder
   }
 }
 

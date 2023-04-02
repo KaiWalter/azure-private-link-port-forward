@@ -41,6 +41,12 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2022-09-01' = {
           ]
         }
       }
+      {
+        name: 'linked'
+        properties: {
+          addressPrefix: '10.1.17.0/24'
+        }
+      }
     ]
   }
 }
@@ -143,6 +149,7 @@ resource peerCorporateHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeeri
 
 output vnetSpokeId string = vnetSpoke.id
 output vnetSpokeJumpSubnetId string = resourceId('Microsoft.Network/virtualNetworks/subnets', vnetSpoke.name, 'jump')
+output vnetSpokeLinkedSubnetId string = resourceId('Microsoft.Network/virtualNetworks/subnets', vnetSpoke.name, 'linked')
 output vnetHubId string = vnetHub.id
 output vnetHubJumpSubnetId string = resourceId('Microsoft.Network/virtualNetworks/subnets', vnetHub.name, 'jump')
 output vnetHubSharedSubnetId string = resourceId('Microsoft.Network/virtualNetworks/subnets', vnetHub.name, 'shared')
