@@ -1,8 +1,9 @@
 param location string
 param resourceToken string
 param tags object
-param sshPublicKey string = ''
-param cloudInitOnPrem string = ''
+param sshPublicKey string
+param cloudInitOnPrem string
+param deploymentMode string
 
 module logging 'modules/logging.bicep' = {
   name: 'logging'
@@ -22,13 +23,13 @@ module network 'modules/network.bicep' = {
   }
 }
 
-module vmOnPrem 'modules/onprem-server/vm.bicep' = [for i in range(65,2): {
+module vmOnPrem 'modules/onprem-server/vm.bicep' = [for i in range(65, 2): {
   name: 'vmOnPrem${i}'
   params: {
     location: location
     resourceToken: resourceToken
     tags: tags
-    vmNumber:i
+    vmNumber: i
     sshPublicKey: sshPublicKey
     cloudInit: cloudInitOnPrem
     subnetId: network.outputs.vnetOnPremSubnetId
@@ -55,17 +56,32 @@ module hubJump 'modules/containergroup.bicep' = {
   }
 }
 
-// module forwarder 'modules/forwarder/forwarder.bicep' = {
-//   name: 'forwarder'
-//   params: {
-//     location: location
-//     resourceToken: resourceToken
-//     tags: tags
-//     sharedSubnetId: network.outputs.vnetHubSharedSubnetId
-//     resourceGroupNameCompute: ''
-//     sshPublicKey: sshPublicKey
-//   }
-// }
+module forwarder 'modules/forwarder/forwarder.bicep' = if (deploymentMode == 'Forwarder') {
+  name: 'forwarder'
+  params: {
+    location: location
+    resourceToken: resourceToken
+    tags: tags
+    sharedSubnetId: network.outputs.vnetHubSharedSubnetId
+    resourceGroupNameCompute: ''
+    sshPublicKey: sshPublicKey
+  }
+}
+
+module loadbalancer 'modules/loadbalancer/loadbalancer.bicep' = if (deploymentMode == 'Direct') {
+  name: 'direct-loadbalancer'
+  dependsOn: [
+    vmOnPrem
+  ]
+  params: {
+    resourceToken: resourceToken
+    location: location
+    tags: tags
+    sharedSubnetId: network.outputs.vnetHubSharedSubnetId
+    vnetHubId: network.outputs.vnetHubId
+    logAnalyticsWorkspaceId: logging.outputs.logAnalyticsWorkspaceId
+  }
+}
 
 output containerGroupSpokeJumpName string = spokeJump.outputs.containerGroupName
 output containerGroupHubJumpName string = hubJump.outputs.containerGroupName

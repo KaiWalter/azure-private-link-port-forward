@@ -8,6 +8,13 @@
 ssh-keygen -m PEM -t rsa -b 4096
 ```
 
+login to your subscription first
+
+```shell
+az login
+azd login
+```
+
 ## deployment
 
 ```shell
@@ -68,3 +75,5 @@ cat /var/log/cloud-init-output.log
 <https://jensd.be/343/linux/forward-a-tcp-port-to-another-ip-or-port-using-nat-with-iptables>
 
 <https://en.m.wikipedia.org/wiki/Iptables#/media/File%3ANetfilter-packet-flow.svg>
+
+<https://stackoverflow.com/questions/75910542/backendaddresspool-in-azure-load-balancer-with-only-ip-addresses-does-not-deploy>

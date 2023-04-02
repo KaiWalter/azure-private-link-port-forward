@@ -15,6 +15,13 @@ param principalId string = ''
 @description('SSH public key to be set on the VMs')
 param sshPublicKey string = ''
 
+@allowed([
+  'Direct'
+  'Forwarder'
+])
+@description('Direct=non working deployment w/o forwarder, Forwarder=regular desired deployment')
+param deploymentMode string = 'Forwarder'
+
 param cloudInitOnPrem string = ''
 
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -36,6 +43,7 @@ module resources './resources.bicep' = {
     tags: tags
     sshPublicKey: sshPublicKey
     cloudInitOnPrem: cloudInitOnPrem
+    deploymentMode: deploymentMode
   }
 }
 

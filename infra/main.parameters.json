@@ -17,6 +17,9 @@
       },
       "cloudInitOnPrem": {
           "value": "${CLOUD_INIT_ONPREM}"
+      },
+      "deploymentMode":{
+        "value": "Direct"
       }
     }
   }
