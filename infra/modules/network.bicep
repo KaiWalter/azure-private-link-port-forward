@@ -2,6 +2,55 @@ param resourceToken string
 param location string = resourceGroup().location
 param tags object
 
+resource publicipprefix 'Microsoft.Network/publicIPPrefixes@2022-09-01' = {
+  name: 'nat-pipp-${resourceToken}'
+  location: location
+  tags: tags
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    prefixLength: 31
+    publicIPAddressVersion: 'IPv4'
+  }
+}
+
+resource publicip 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
+  name: 'nat-pip-${resourceToken}'
+  location: location
+  tags: tags
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAddressVersion: 'IPv4'
+    publicIPAllocationMethod: 'Static'
+    idleTimeoutInMinutes: 4
+  }
+}
+
+resource natgw 'Microsoft.Network/natGateways@2022-09-01' = {
+  name: 'nat-gw-${resourceToken}'
+  location: location
+  tags: tags
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    idleTimeoutInMinutes: 4
+    publicIpAddresses: [
+      {
+        id: publicip.id
+      }
+    ]
+    publicIpPrefixes: [
+      {
+        id: publicipprefix.id
+      }
+    ]
+  }
+}
+
 // spoke virtual network where the isolated compute resources are deployed
 resource vnetSpoke 'Microsoft.Network/virtualNetworks@2022-09-01' = {
   name: 'vnet-spoke-${resourceToken}'
@@ -69,6 +118,9 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2022-09-01' = {
           addressPrefix: '10.0.1.0/26'
           privateEndpointNetworkPolicies: 'Disabled'
           privateLinkServiceNetworkPolicies: 'Disabled'
+          natGateway: {
+            id: natgw.id
+          }
         }
       }
       {

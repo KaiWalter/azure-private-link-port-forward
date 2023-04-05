@@ -104,6 +104,8 @@ cat /var/log/cloud-init-output.log
 
 <https://en.m.wikipedia.org/wiki/Iptables#/media/File%3ANetfilter-packet-flow.svg>
 
+<https://learn.microsoft.com/en-us/azure/load-balancer/skus#skus>
+
 <https://stackoverflow.com/questions/75910542/backendaddresspool-in-azure-load-balancer-with-only-ip-addresses-does-not-deploy>
 
 ----

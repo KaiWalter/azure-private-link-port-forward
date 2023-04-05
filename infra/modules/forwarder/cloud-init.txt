@@ -1,7 +1,4 @@
 #cloud-config
-package_upgrade: true
-packages:
-- iptables-persistent
 write_files:
 - path: /etc/sysctl.conf
   content: | 
@@ -28,8 +25,12 @@ write_files:
     iptables -t nat -A PREROUTING -s 168.63.129.16/32 -p tcp -m tcp --dport $PORT -j DNAT --to-destination $ONPREMSERVER:$PORT
     iptables -t nat -A PREROUTING -s $INBOUNDNET -p tcp -m tcp --dport $PORT -j DNAT --to-destination $ONPREMSERVER:$PORT
     iptables -t nat -A POSTROUTING -d $ONPREMNET -j MASQUERADE
+    iptables-save > /etc/sysconfig/iptables
   permissions: '0755'
 runcmd:
 - sysctl -p
+- dnf update -y
+- dnf install iptables-services -y
+- systemctl start iptables
+- systemctl enable iptables
 - /tmp/config-iptables.sh
-- service netfilter-persistent save
