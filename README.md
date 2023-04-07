@@ -19,6 +19,7 @@ azd login
 
 ```shell
 azd init
+scripts/set-environment.sh
 azd up
 ```
 

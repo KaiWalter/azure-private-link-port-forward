@@ -2,13 +2,5 @@
 
 name: azure-private-link-port-forward
 hooks:
-  preinfracreate:
-    run: ./hooks/preprovision.sh
-    continueOnError: false
-    interactive: true
-  preup:
-    run: ./hooks/preprovision.sh
-    continueOnError: false
-    interactive: true
   postprovision:
-    run: ./hooks/postprovision.sh
+    run: ./hooks/post-provision.sh
