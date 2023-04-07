@@ -2,19 +2,6 @@ param resourceToken string
 param location string = resourceGroup().location
 param tags object
 
-resource publicipprefix 'Microsoft.Network/publicIPPrefixes@2022-09-01' = {
-  name: 'nat-pipp-${resourceToken}'
-  location: location
-  tags: tags
-  sku: {
-    name: 'Standard'
-  }
-  properties: {
-    prefixLength: 31
-    publicIPAddressVersion: 'IPv4'
-  }
-}
-
 resource publicip 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
   name: 'nat-pip-${resourceToken}'
   location: location
@@ -41,11 +28,6 @@ resource natgw 'Microsoft.Network/natGateways@2022-09-01' = {
     publicIpAddresses: [
       {
         id: publicip.id
-      }
-    ]
-    publicIpPrefixes: [
-      {
-        id: publicipprefix.id
       }
     ]
   }
