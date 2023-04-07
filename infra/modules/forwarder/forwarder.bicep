@@ -153,9 +153,9 @@ resource vmss 'Microsoft.Compute/virtualMachineScaleSets@2020-12-01' = {
           diskSizeGB: 32
         }
         imageReference: {
-          publisher: 'canonical'
-          offer: '0001-com-ubuntu-server-jammy'
-          sku: '22_04-LTS'
+          publisher: 'MicrosoftCBLMariner'
+          offer: 'cbl-mariner'
+          sku: 'cbl-mariner-2-gen2'
           version: 'latest'
         }
       }

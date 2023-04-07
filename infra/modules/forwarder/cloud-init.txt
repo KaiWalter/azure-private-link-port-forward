@@ -1,7 +1,4 @@
 #cloud-config
-package_upgrade: true
-packages:
-- iptables-persistent
 write_files:
 - path: /etc/sysctl.conf
   content: | 
@@ -9,27 +6,44 @@ write_files:
     net.ipv4.ip_forward=1
     net.ipv4.conf.all.route_localnet=1
   append: true
-- path: /tmp/config-iptables.sh
+- path: /etc/set-iptables.sh
   content: | 
     #!/bin/bash
-    export INBOUNDNET=10.0.1.0/24
-    if [[ $HOSTNAME =~ [02468]$ ]]; then export ONPREMSERVER=192.168.42.65; else export ONPREMSERVER=192.168.42.66; fi
-    export ONPREMNET=192.168.42.64/29
-    export PORT=8000
+    INBOUNDNET=10.0.1.0/24
+    if [[ $HOSTNAME =~ [02468]$ ]]; then ONPREMSERVER=192.168.42.65; else ONPREMSERVER=192.168.42.66; fi
+    PORT=8000
     echo HOSTNAME $HOSTNAME INBOUNDNET $INBOUNDNET ONPREMSERVER $ONPREMSERVER ONPREMNET $ONPREMNET
+    IPTABLES_WAIT="-w 10"
     iptables --flush
-    iptables -P INPUT DROP
-    iptables -P OUTPUT ACCEPT
-    iptables -A INPUT -i lo -j ACCEPT
-    iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-    iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
-    iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-    iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1 --dport $PORT -j DNAT --to-destination $ONPREMSERVER
-    iptables -t nat -A PREROUTING -s 168.63.129.16/32 -p tcp -m tcp --dport $PORT -j DNAT --to-destination $ONPREMSERVER:$PORT
-    iptables -t nat -A PREROUTING -s $INBOUNDNET -p tcp -m tcp --dport $PORT -j DNAT --to-destination $ONPREMSERVER:$PORT
-    iptables -t nat -A POSTROUTING -d $ONPREMNET -j MASQUERADE
+    iptables ${IPTABLES_WAIT} -P INPUT DROP
+    iptables ${IPTABLES_WAIT} -P OUTPUT ACCEPT
+    iptables ${IPTABLES_WAIT} -A FORWARD -j ACCEPT
+    iptables ${IPTABLES_WAIT} -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    iptables ${IPTABLES_WAIT} -A INPUT -m conntrack --ctstate INVALID -j DROP
+    iptables ${IPTABLES_WAIT} -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+    iptables --flush -t nat
+    iptables ${IPTABLES_WAIT} -t nat -A OUTPUT -p tcp -d 127.0.0.1 --dport $PORT -j DNAT --to-destination $ONPREMSERVER
+    iptables ${IPTABLES_WAIT} -t nat -A PREROUTING -s 168.63.129.16/32 -p tcp -m tcp --dport $PORT -j DNAT --to-destination $ONPREMSERVER:$PORT
+    iptables ${IPTABLES_WAIT} -t nat -A PREROUTING -s $INBOUNDNET -p tcp -m tcp --dport $PORT -j DNAT --to-destination $ONPREMSERVER:$PORT
+    iptables ${IPTABLES_WAIT} -t nat -A POSTROUTING -d $ONPREMSERVER -j MASQUERADE
+    sysctl -p
   permissions: '0755'
+# from 
+- path: /etc/systemd/system/iptables-persistent.service
+  content: | 
+    [Unit]
+    Description=iptables persistent service
+    ConditionFileIsExecutable=/etc/set-iptables.sh
+    After=network.target
+    [Service]
+    Type=forking
+    ExecStart=/etc/set-iptables.sh
+    start TimeoutSec=0
+    RemainAfterExit=yes
+    GuessMainPID=no
+    [Install]
+    WantedBy=multi-user.target
 runcmd:
-- sysctl -p
-- /tmp/config-iptables.sh
-- service netfilter-persistent save
+- dnf update -y
+- systemctl enable iptables-persistent.service
+- systemctl start iptables-persistent.service

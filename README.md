@@ -49,6 +49,8 @@ echo "EOL"
 echo "chmod 600 ~/.ssh/id_rsa"
 ```
 
+cat ~/.ssh/id_rsa | base64 -w 0
+
 ## check connectivity from spoke network to on-prem server
 
 ```shell
@@ -71,12 +73,6 @@ az container stop -n $SPOKE_JUMP_NAME -g $RESOURCE_GROUP_NAME
 
 ## helpers
 
-### show iptables rule file (on VMSS node VM)
-
-```shell
-sudo cat /etc/iptables/rules.v4
-```
-
 ### show iptables counters
 
 ```shell
@@ -84,10 +80,10 @@ sudo iptables -L -n -v
 sudo iptables -L -n -t nat -v
 ```
 
-### load from saved iptables
+in an endless loop
 
 ```shell
-sudo service netfilter-persistent reload
+while true; do clear; iptables -L -n -v; iptables -L -n -v -t nat; sleep 1; done
 ```
 
 ## check cloud init log
@@ -96,13 +92,37 @@ sudo service netfilter-persistent reload
 cat /var/log/cloud-init-output.log
 ```
 
+## check which version of cloud-init was used
+
+```shell
+cat /var/lib/waagent/ovf-env.xml | sed -n -e 's/.*<ns1:CustomData>\(.*\)<\/ns1:CustomData>.*/\1/p' | base64 --decode
+```
+
+## delete VMSS for retesting
+
+```shell
+source <(azd env get-values | grep NAME)
+az vmss delete --id $(az vmss list -g $RESOURCE_GROUP_NAME --query '[].id' -o tsv) --force-deletion true
+```
+
+## check cloud init in deployment parameter
+
+```shell
+source <(azd env get-values | grep CLOUD)
+echo $CLOUD_INIT_FWD | base64 --decode
+```
+
 ## reference information
+
+- [simple idea to make iptables persistent across reboots](https://dev.to/oryaacov/3-ways-to-make-iptables-persistent-4pp)
 
 <https://learn.microsoft.com/en-us/azure/load-balancer/backend-pool-management#limitations>
 
 <https://jensd.be/343/linux/forward-a-tcp-port-to-another-ip-or-port-using-nat-with-iptables>
 
 <https://en.m.wikipedia.org/wiki/Iptables#/media/File%3ANetfilter-packet-flow.svg>
+
+<https://learn.microsoft.com/en-us/azure/load-balancer/skus#skus>
 
 <https://stackoverflow.com/questions/75910542/backendaddresspool-in-azure-load-balancer-with-only-ip-addresses-does-not-deploy>
 
