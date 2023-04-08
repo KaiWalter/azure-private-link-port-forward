@@ -18,6 +18,7 @@ write_files:
     iptables ${IPTABLES_WAIT} -P INPUT DROP
     iptables ${IPTABLES_WAIT} -P OUTPUT ACCEPT
     iptables ${IPTABLES_WAIT} -A FORWARD -j ACCEPT
+    iptables ${IPTABLES_WAIT} -I INPUT -i lo -j ACCEPT
     iptables ${IPTABLES_WAIT} -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     iptables ${IPTABLES_WAIT} -A INPUT -m conntrack --ctstate INVALID -j DROP
     iptables ${IPTABLES_WAIT} -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
@@ -44,6 +45,8 @@ write_files:
     [Install]
     WantedBy=multi-user.target
 runcmd:
+- iptables -L -v -n
+- iptables -L -v -n -t nat
 - dnf update -y
 - systemctl enable iptables-persistent.service
 - systemctl start iptables-persistent.service

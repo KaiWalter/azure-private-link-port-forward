@@ -151,3 +151,30 @@ az network lb rule create -g $RESOURCE_GROUP_NAME --lb-name ilb-$RESOURCE_TOKEN 
 --probe direct
 
 az network lb show -g $RESOURCE_GROUP_NAME --name ilb-$RESOURCE_TOKEN
+
+## iptables CBL before reconfiguration
+
+Chain INPUT (policy DROP 4 packets, 208 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    2   196 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0
+   26 15432 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+   42  6695 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0
+Chain PREROUTING (policy ACCEPT 4 packets, 208 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+Chain OUTPUT (policy ACCEPT 9 packets, 564 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+Chain POSTROUTING (policy ACCEPT 9 packets, 564 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+ 
